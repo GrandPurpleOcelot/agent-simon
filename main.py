@@ -20,9 +20,8 @@ def read_docx(file):
 
 def main():
     st.title('Docx Reader')
-    st.subheader('Upload a .docx file to display its content')
 
-    uploaded_file = st.file_uploader("Choose a file", type='docx')
+    uploaded_file = st.file_uploader("Upload a Teams meeting transript .docx file", type='docx')
     if uploaded_file is not None:
         # To read file as bytes:
         bytes_data = uploaded_file.getvalue()
