@@ -1,0 +1,21 @@
+Workflow Explanation with actors (columns) and handling steps -solution submission, evaluation (row):
+
+v Support Engineer submits Solution for corresponding Case.
+
+v Customer proceeds to Accept or Decline Solution.
+
+Ø If Solution is accepted by Customer, Support Engineer will close Case.
+
+Ø If Solution is declined by Customer, Support Engineer will:
+
+§ Submit Solution if another Solution is found.
+
+§ Elevate Case to Support Engineer of higher level if no Solutions are found.
+
+· If level of current Support Engineer is 1, Case is elevated to Support Engineer level 2 of the same team. Support Engineer level 2 goes back to collecting materials.
+
+· If level of current Support Engineer is 2, Case is elevated to Support Engineer level 3 of the same team. Support Engineer level 3 goes back to collecting materials.
+
+· If level of current Support Engineer is 3, Support Engineer asks for support from Developer of the Product and goes back to collecting materials.
+
+Ø Customer can accept solution which has been declined before that
