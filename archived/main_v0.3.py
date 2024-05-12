@@ -20,7 +20,7 @@ def generate_plan(transcript_text):
         openai_response = openai.chat.completions.create(
             model="gpt-4-turbo-preview",
             messages=[
-                {"role": "system", "content": "Generate a high-level software requirements document based on the transcript text. The plan describes the overview of the system functions or business processes. Besure to include Ojective and Requirements for each component. Keep the plan concise and relevant to software functions."},
+                {"role": "system", "content": "Generate a high-level software requirements based on the transcript text. Keep the plan concise and relevant."},
                 {"role": "user", "content": "Below is the transcript from the meeting:\n {}".format(transcript_text)}
             ],
             temperature=0.5,
@@ -34,7 +34,7 @@ def generate_plan(transcript_text):
 
 def generate_table(plan, nl_instruction):
     """Generate tables based on the requirement plan."""
-    instruction_message = f"""Generate a table with three columns: item #, object, description, based on the requirement plan. {nl_instruction}"""
+    instruction_message = f"Generate a table with three columns: item, object, description, based on the requirement plan. {nl_instruction}"
     openai_response = openai.chat.completions.create(
         model="gpt-4-turbo-preview",
         messages=[
@@ -49,10 +49,7 @@ def generate_table(plan, nl_instruction):
 
 def generate_workflow(plan, actor_objects):
     """Generate a user workflow based on the requirement plan and actor objects table."""
-    instruction_message = """Generate a detailed user workflow combining the requirements and actor interactions.\n
-    This section shows the flow of tasks or steps taken by the main actor(s) - the user of the software system,  to complete a business process.\n
-    The actor’s actions are shown in each business process stage of the system along with the conditions (if/else) under which it can move to the next stage or revert to the previous.\n
-    """
+    instruction_message = "Generate a detailed user workflow combining the requirements and actor interactions."
     openai_response = openai.chat.completions.create(
         model="gpt-4-turbo-preview",
         messages=[
@@ -80,42 +77,6 @@ def generate_state_transitions(plan, data_objects):
     state_transitions = openai_response.choices[0].message.content
     return state_transitions
 
-def generate_use_case_table(plan, actor_objects):
-    """Generate a use case description table based on the plan and Actor Objects Table."""
-    instruction_message = "Generate a detailed use case table including columns: UC_ID, UC Name (e.g View Error details), and Description to describe each actor's interactions with the system based on the requirements plan."
-    openai_response = openai.chat.completions.create(
-        model="gpt-4-turbo-preview",
-        messages=[
-            {"role": "system", "content": instruction_message},
-            {"role": "user", "content": f"Requirements Plan:\n{plan}\nActor Objects:\n{actor_objects}"}
-        ],
-        temperature=0.5,
-        max_tokens=1000
-    )
-    use_case_table = openai_response.choices[0].message.content
-    return use_case_table
-
-def generate_permission_matrix(actor_objects, use_case_table):
-    """Generate a permission matrix table based on Actor Objects Table and Use Case Table."""
-    instruction_message = """Generate a permission matrix showing which actors have access to which use cases.\n
-    Columns are Actor and row are UC name\n
-    Cell values:
-    “O” means that user has permission on corresponding function. For more information about what the actor can do on that function, please refer to corresponding use case.\n
-    “O*” means that user has permission on corresponding function on the item they created. For more information about what the actor can do on that function, please refer to corresponding use case.\n
-    “X” means that user does not have permission on corresponding function.
-    """
-    openai_response = openai.chat.completions.create(
-        model="gpt-4-turbo-preview",
-        messages=[
-            {"role": "system", "content": instruction_message},
-            {"role": "user", "content": f"Actor Objects:\n{actor_objects}\nUse Case Table:\n{use_case_table}"}
-        ],
-        temperature=0.5,
-        max_tokens=800
-    )
-    permission_matrix = openai_response.choices[0].message.content
-    return permission_matrix
-
 def main():
     st.title('Agent Simon - Minutes to Requirements')
 
@@ -136,15 +97,15 @@ def main():
         st.markdown(st.session_state['plan'])
 
         if st.button("Generate Data Objects Table"):
-            data_objects = generate_table(st.session_state['plan'], "List all data objects within the software system. For example, the data object can be Devices, Customer Profile, Product, Account, Case, Step-ABC.")
+            data_objects = generate_table(st.session_state['plan'], "List all data objects within the software system.")
             st.session_state['data_objects'] = data_objects
 
         if st.button("Generate Actor Objects Table"):
-            actor_objects = generate_table(st.session_state['plan'], "List all actors that directly interact with the software. For example actors can be Sensor, Worker, Customer, QC Specialist, Supervisor, etc.")
+            actor_objects = generate_table(st.session_state['plan'], "List all actors that interact with the software.")
             st.session_state['actor_objects'] = actor_objects
 
         if st.button("Generate External System Objects Table"):
-            external_systems = generate_table(st.session_state['plan'], "List all external systems or services that the software will interact with. For example external system can be CRM, Active Directory, Sales Management System etc.")
+            external_systems = generate_table(st.session_state['plan'], "List all external systems or services that the software might interact with.")
             st.session_state['external_systems'] = external_systems
 
     if 'data_objects' in st.session_state:
@@ -169,16 +130,6 @@ def main():
             state_transitions = generate_state_transitions(st.session_state['plan'], st.session_state['data_objects'])
             st.session_state['state_transitions'] = state_transitions
 
-    if 'state_transitions' in st.session_state and 'actor_objects' in st.session_state:
-        if st.button("Generate Use Case Table"):
-            use_case_table = generate_use_case_table(st.session_state['plan'], st.session_state['actor_objects'])
-            st.session_state['use_case_table'] = use_case_table
-
-    if 'use_case_table' in st.session_state and 'actor_objects' in st.session_state:
-        if st.button("Generate Permission Matrix"):
-            permission_matrix = generate_permission_matrix(st.session_state['actor_objects'], st.session_state['use_case_table'])
-            st.session_state['permission_matrix'] = permission_matrix
-
     if 'workflow' in st.session_state:
         st.write("### Generated User Workflow:")
         st.markdown(st.session_state['workflow'])
@@ -186,14 +137,6 @@ def main():
     if 'state_transitions' in st.session_state:
         st.write("### Generated State Transitions:")
         st.markdown(st.session_state['state_transitions'])
-
-    if 'use_case_table' in st.session_state:
-        st.write("### Generated Use Case Table:")
-        st.markdown(st.session_state['use_case_table'])
-
-    if 'permission_matrix' in st.session_state:
-        st.write("### Generated Permission Matrix:")
-        st.markdown(st.session_state['permission_matrix'])
 
 if __name__ == "__main__":
     main()
