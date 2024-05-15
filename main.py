@@ -18,7 +18,7 @@ def generate_plan(transcript_text):
     """Generate a requirement plan using OpenAI."""
     try:
         openai_response = openai.chat.completions.create(
-            model="gpt-4-turbo-preview",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "Generate a high-level software requirements document based on the transcript text. The plan describes the overview of the system functions or business processes. Besure to include Ojective and Requirements for each component. Keep the plan concise and relevant to software functions."},
                 {"role": "user", "content": "Below is the transcript from the meeting:\n {}".format(transcript_text)}
@@ -36,13 +36,13 @@ def generate_table(plan, nl_instruction):
     """Generate tables based on the requirement plan."""
     instruction_message = f"""Generate a table with three columns: item #, object, description, based on the requirement plan. {nl_instruction}"""
     openai_response = openai.chat.completions.create(
-        model="gpt-4-turbo-preview",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": instruction_message},
             {"role": "user", "content": plan}
         ],
         temperature=0.5,
-        max_tokens=500
+        max_tokens=2000
     )
     descriptions = openai_response.choices[0].message.content
     return descriptions
@@ -54,13 +54,13 @@ def generate_workflow(plan, actor_objects):
     The actor’s actions are shown in each business process stage of the system along with the conditions (if/else) under which it can move to the next stage or revert to the previous.\n
     """
     openai_response = openai.chat.completions.create(
-        model="gpt-4-turbo-preview",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": instruction_message},
             {"role": "user", "content": f"Requirements Plan:\n{plan}\nActor Objects:\n{actor_objects}"}
         ],
         temperature=0.5,
-        max_tokens=1500
+        max_tokens=2000
     )
     workflow = openai_response.choices[0].message.content
     return workflow
@@ -69,13 +69,13 @@ def generate_state_transitions(plan, data_objects):
     """Generate state transition steps based on the plan and Data Objects Table."""
     instruction_message = "Generate state transition steps for the software based on the requirements plan and data objects."
     openai_response = openai.chat.completions.create(
-        model="gpt-4-turbo-preview",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": instruction_message},
             {"role": "user", "content": f"Requirements Plan:\n{plan}\nData Objects:\n{data_objects}"}
         ],
         temperature=0.5,
-        max_tokens=1000
+        max_tokens=2000
     )
     state_transitions = openai_response.choices[0].message.content
     return state_transitions
@@ -84,13 +84,13 @@ def generate_use_case_table(plan, actor_objects):
     """Generate a use case description table based on the plan and Actor Objects Table."""
     instruction_message = "Generate a detailed use case table including columns: UC_ID, UC Name (e.g User Login, View Error details), and Description to describe each actor's interactions with the system based on the requirements plan."
     openai_response = openai.chat.completions.create(
-        model="gpt-4-turbo-preview",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": instruction_message},
             {"role": "user", "content": f"Requirements Plan:\n{plan}\nActor Objects:\n{actor_objects}"}
         ],
         temperature=0.5,
-        max_tokens=1000
+        max_tokens=2000
     )
     use_case_table = openai_response.choices[0].message.content
     return use_case_table
@@ -105,13 +105,13 @@ def generate_permission_matrix(actor_objects, use_case_table):
     “X” means that user does not have permission on corresponding function.
     """
     openai_response = openai.chat.completions.create(
-        model="gpt-4-turbo-preview",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": instruction_message},
             {"role": "user", "content": f"Actor Objects:\n{actor_objects}\nUse Case Table:\n{use_case_table}"}
         ],
         temperature=0.5,
-        max_tokens=800
+        max_tokens=2000
     )
     permission_matrix = openai_response.choices[0].message.content
     return permission_matrix
