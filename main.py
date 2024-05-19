@@ -276,11 +276,11 @@ def main():
 
             # Display a completion message or any additional information
             st.success("All use case specifications have been generated successfully!")
-    # Display the generated use case specifications
-    if 'use_case_specs' in st.session_state:
-        st.write("### Generated Use Case Specifications:")
-        for spec in st.session_state['use_case_specs']:
-            st.text(spec)
+    # # Display the generated use case specifications
+    # if 'use_case_specs' in st.session_state:
+    #     st.write("### Generated Use Case Specifications:")
+    #     for spec in st.session_state['use_case_specs']:
+    #         st.text(spec)
 
     if 'permission_matrix' in st.session_state:
         st.write("### Generated Permission Matrix:")
