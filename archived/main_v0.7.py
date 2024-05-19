@@ -140,15 +140,14 @@ def generate_permission_matrix(actor_objects, use_case_table):
     permission_matrix = openai_response.choices[0].message.content
     return permission_matrix
 
-def generate_use_case_specs(use_case, workflow):
-    """Generate detailed specifications for a use case, including workflow information."""
+def generate_use_case_specs(use_case):
+    """Generate detailed specifications for a use case."""
     try:
         openai_response = openai.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": f"""Generate a concise specifications table including the following rows:
-                 Objective, Actor(s), Trigger, Pre-condition, User-Workflow, Post-condition, Acceptance Criteria for the following use case.\n
-                 You can refer to the User Workflow for more context: {workflow}"""},
+                {"role": "system", "content": """Generate a concise specifications table including the follow rows:\n 
+                 Objective, Actor, Trigger, Pre-condition, Post-condition, Acceptan Criteria for the following use case."""},
                 {"role": "user", "content": f"Use Case Name: {use_case['UC_Name']}\nDescription: {use_case['Description']}"}
             ],
             temperature=0.5,
@@ -166,59 +165,30 @@ def main():
     if uploaded_file is not None:
         bytes_data = uploaded_file.getvalue()
         text = read_docx(BytesIO(bytes_data))
-        st.write("### Uploaded Document:")
+        st.write("### Document Content:")
         st.text_area("Content", value=text, height=300)
 
-        if st.button("Generate Requirement Plan", use_container_width=True, type="primary"):
-            with st.spinner('🤔Thinking on how to convert minutes to requirements...'):
-                plan = generate_plan(text)
-                if plan:
-                    st.session_state['plan'] = plan  # Save plan to session state
-                    st.markdown("### Generated Requirement Plan:")
-                    st.markdown(plan)
-                    st.markdown('👈 Follow the **actions** on the sidebar to continue')
-                else:
-                    st.error('Failed to generate Requirement Plan.')
+        if st.button("Generate Requirement Plan"):
+            plan = generate_plan(text)
+            if plan:
+                st.session_state['plan'] = plan  # Save plan to session state
 
-    # Sidebar for other actions
-    with st.sidebar:
-        if 'plan' in st.session_state:
-            st.write("### Actions")
-            if st.button("Generate Data Objects Table"):
-                data_objects = generate_table(st.session_state['plan'], "List all data objects within the software system...")
-                st.session_state['data_objects'] = data_objects
+    if 'plan' in st.session_state:
+        st.write("### Generated Requirement Plan:")
+        st.markdown(st.session_state['plan'])
 
-            if st.button("Generate Actor Objects Table"):
-                actor_objects = generate_table(st.session_state['plan'], "List all actors that directly interact with the software...")
-                st.session_state['actor_objects'] = actor_objects
+        if st.button("Generate Data Objects Table"):
+            data_objects = generate_table(st.session_state['plan'], "List all data objects within the software system. For example, the data object can be Devices, Customer Profile, Product, Account, Case, Step-ABC.")
+            st.session_state['data_objects'] = data_objects
 
-            if st.button("Generate External System Objects"):
-                external_systems = generate_table(st.session_state['plan'], "List all external systems or services...")
-                st.session_state['external_systems'] = external_systems
+        if st.button("Generate Actor Objects Table"):
+            actor_objects = generate_table(st.session_state['plan'], "List all actors that directly interact with the software. For example actors can be Sensor, Worker, Customer, QC Specialist, Supervisor, etc.")
+            st.session_state['actor_objects'] = actor_objects
 
-            if 'actor_objects' in st.session_state and 'plan' in st.session_state:
-                if st.button("Generate Workflow"):
-                    workflow = generate_workflow(st.session_state['plan'], st.session_state['actor_objects'])
-                    st.session_state['workflow'] = workflow
+        if st.button("Generate External System Objects Table"):
+            external_systems = generate_table(st.session_state['plan'], "List all external systems or services that the software will interact with. For example external system can be CRM, Active Directory, Sales Management System etc.")
+            st.session_state['external_systems'] = external_systems
 
-            if 'workflow' in st.session_state and 'data_objects' in st.session_state:
-                if st.button("Generate State Transition"):
-                    state_transitions = generate_state_transitions(st.session_state['plan'], st.session_state['data_objects'])
-                    st.session_state['state_transitions'] = state_transitions
-
-            if 'actor_objects' in st.session_state and 'plan' in st.session_state:
-                if st.button("Generate Use Case Table"):
-                    use_case_table = generate_use_case_table(st.session_state['plan'], st.session_state['actor_objects'])
-                    st.session_state['use_case_table'] = use_case_table
-                    # Parse and store in session state
-                    st.session_state['use_cases'] = parse_markdown_table(use_case_table)
-
-            if 'use_case_table' in st.session_state and 'actor_objects' in st.session_state:
-                if st.button("Generate Permission Matrix"):
-                    permission_matrix = generate_permission_matrix(st.session_state['actor_objects'], st.session_state['use_case_table'])
-                    st.session_state['permission_matrix'] = permission_matrix
-
-    # Main area to display results
     if 'data_objects' in st.session_state:
         st.write("### Data Objects Table:")
         st.markdown(st.session_state['data_objects'])
@@ -231,6 +201,69 @@ def main():
         st.write("### External Systems Table:")
         st.markdown(st.session_state['external_systems'])
 
+    if 'actor_objects' in st.session_state and 'plan' in st.session_state:
+        if st.button("Generate Workflow"):
+            workflow = generate_workflow(st.session_state['plan'], st.session_state['actor_objects'])
+            st.session_state['workflow'] = workflow
+
+    if 'workflow' in st.session_state and 'data_objects' in st.session_state:
+        if st.button("Generate State Transition"):
+            state_transitions = generate_state_transitions(st.session_state['plan'], st.session_state['data_objects'])
+            st.session_state['state_transitions'] = state_transitions
+
+    if 'actor_objects' in st.session_state and 'plan' in st.session_state:
+        if st.button("Generate Use Case Table"):
+            use_case_table = generate_use_case_table(st.session_state['plan'], st.session_state['actor_objects'])
+            st.session_state['use_case_table'] = use_case_table
+            # Parse and store in session state
+            st.session_state['use_cases'] = parse_markdown_table(use_case_table)
+
+    if 'use_cases' in st.session_state:
+        if st.button("Generate Use Case Specs"):
+            # Initialize an empty list to store all use case specifications
+            use_case_specs = []
+            
+            # Create a placeholder for real-time updates
+            real_time_placeholder = st.empty()
+            
+            # Create a placeholder for accumulated results
+            accumulated_results_placeholder = st.empty()
+            accumulated_results = ""  # Start with an empty string to accumulate results
+            
+            # Loop through each use case and generate specifications
+            for index, use_case in enumerate(st.session_state['use_cases']['use_cases']):
+                # Generate specifications for the current use case
+                description = generate_use_case_specs(use_case)
+                
+                # Append the new specification to the list
+                use_case_specs.append(description)
+                
+                # Display the specification being processed in real-time
+                real_time_placeholder.markdown(f"Processing use case {index + 1}/{len(st.session_state['use_cases']['use_cases'])}...")
+                
+                # Update the accumulated results with the new specification
+                accumulated_results += f"**Use Case {index + 1}:**\n{description}\n\n"
+                accumulated_results_placeholder.markdown(accumulated_results)
+            
+            # Clear the real-time placeholder once all specs are processed
+            real_time_placeholder.empty()
+            
+            # Update session state with all generated use case specifications
+            st.session_state['use_case_specs'] = use_case_specs
+            
+            # Display a completion message or any additional information
+            st.success("All use case specifications have been generated successfully!")
+    # Display the generated use case specifications
+    if 'use_case_specs' in st.session_state:
+        st.write("### Generated Use Case Specifications:")
+        for spec in st.session_state['use_case_specs']:
+            st.text(spec)
+
+    if 'use_case_table' in st.session_state and 'actor_objects' in st.session_state:
+        if st.button("Generate Permission Matrix"):
+            permission_matrix = generate_permission_matrix(st.session_state['actor_objects'], st.session_state['use_case_table'])
+            st.session_state['permission_matrix'] = permission_matrix
+
     if 'workflow' in st.session_state:
         st.write("### Generated User Workflow:")
         st.markdown(st.session_state['workflow'])
@@ -242,45 +275,6 @@ def main():
     if 'use_case_table' in st.session_state:
         st.write("### Generated Use Case Table:")
         st.markdown(st.session_state['use_case_table'])
-
-    if 'use_cases' in st.session_state and 'workflow' in st.session_state:
-        if st.button("Generate Use Case Specs", use_container_width=True, type="primary"):
-            # Initialize an empty list to store all use case specifications
-            use_case_specs = []
-
-            # Create placeholders for real-time updates and accumulated results
-            real_time_placeholder = st.empty()
-            accumulated_results_placeholder = st.empty()
-            accumulated_results = ""  # Start with an empty string to accumulate results
-
-            # Loop through each use case and generate specifications
-            for index, use_case in enumerate(st.session_state['use_cases']['use_cases']):
-                # Generate specifications for the current use case, including workflow
-                description = generate_use_case_specs(use_case, st.session_state['workflow'])
-
-                # Append the new specification to the list
-                use_case_specs.append(description)
-
-                # Display the specification being processed in real-time
-                real_time_placeholder.markdown(f"Processing use case {index + 1}/{len(st.session_state['use_cases']['use_cases'])}...")
-
-                # Update the accumulated results with the new specification
-                accumulated_results += f"**Use Case {index + 1}:**\n{description}\n\n"
-                accumulated_results_placeholder.markdown(accumulated_results)
-
-            # Clear the real-time placeholder once all specs are processed
-            real_time_placeholder.empty()
-
-            # Update session state with all generated use case specifications
-            st.session_state['use_case_specs'] = use_case_specs
-
-            # Display a completion message or any additional information
-            st.success("All use case specifications have been generated successfully!")
-    # Display the generated use case specifications
-    if 'use_case_specs' in st.session_state:
-        st.write("### Generated Use Case Specifications:")
-        for spec in st.session_state['use_case_specs']:
-            st.text(spec)
 
     if 'permission_matrix' in st.session_state:
         st.write("### Generated Permission Matrix:")
