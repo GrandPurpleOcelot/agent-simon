@@ -160,6 +160,15 @@ def generate_use_case_specs(use_case, workflow):
         return "Error generating specifications."
 
 def main():
+    # Streamlit interface
+    st.set_page_config(page_title="Agent James - Test Case Maker", page_icon=":memo:", layout='wide')
+
+    # Using columns to center the logo
+    col1, col2, col3 = st.columns([1,2,1])  # Adjust the ratio as needed to center the logo
+    with col2:
+        logo_path = "bavista_logo.png"  # Update 'path_to_your_logo.png' with the real path to your logo file
+        st.image(logo_path, use_column_width=True)  # Adjust 'use_column_width' to True or set width parameter
+    
     st.title('Agent Simon - Minutes to Requirements')
 
     uploaded_file = st.file_uploader("Upload a Teams meeting transcript .docx file", type='docx')
